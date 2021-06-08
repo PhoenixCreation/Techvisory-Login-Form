@@ -139,6 +139,7 @@ export default function App() {
                     value={user.email}
                     onChangeText={(e) => setUser({ ...user, email: e })}
                     style={styles.inputField}
+                    autoCompleteType="email"
                     placeholder="e.g. jay123@domain.com"
                   />
                   <Entypo name="email" size={24} color={validColor.email} />
@@ -151,6 +152,7 @@ export default function App() {
                     value={user.password}
                     onChangeText={(e) => setUser({ ...user, password: e })}
                     style={styles.inputField}
+                    autoCompleteType="password"
                     placeholder="Your Password"
                     secureTextEntry={true}
                   />
