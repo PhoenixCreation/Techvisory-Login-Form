@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Image,
+  Alert,
 } from "react-native";
 import Constants from "expo-constants";
 import { Entypo } from "@expo/vector-icons";
@@ -20,7 +21,79 @@ const fontFamily = Constants.systemFonts.includes(fontName)
   ? fontName
   : "normal";
 
+// Totaly not from stackoverflow
+function validateEmail(email) {
+  var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
 export default function App() {
+  // State for checking weather login using email or socials
+  const [loginType, setLoginType] = useState("normal");
+
+  // validation colors to be displayed to icon and login button
+  const [validColor, setValidColor] = useState({
+    email: "black",
+    password: "black",
+    button: "#AF3263",
+  });
+
+  // User object to store user information
+  const [user, setUser] = useState({
+    email: "",
+    password: "",
+  });
+
+  // Any type of error message
+  const [error, setError] = useState("");
+
+  // validate the information each time user value changes
+  useEffect(() => {
+    let validEmail = false;
+    let validPassword = false;
+
+    // Currently only checking if password in 6 charcters long or not
+    // As this is login form, Signup form should check for more constrains
+    if (user.password.length > 5) {
+      validPassword = true;
+    }
+
+    // Using function defined above to check email
+    validEmail = validateEmail(user.email);
+
+    // set the colors
+    setValidColor({
+      email: user.email === "" ? "black" : validEmail ? "green" : "red",
+      password:
+        user.password === "" ? "black" : validPassword ? "green" : "red",
+      button: validPassword && validEmail ? "#FF3263" : "#AF3263",
+    });
+  }, [user]);
+
+  // The main login function
+  // In this function the main login logic will be handled
+  const performLogin = () => {
+    if (!validateEmail(user.email)) {
+      setError("Invalid Email");
+      setTimeout(() => {
+        setError("");
+      }, 4000);
+      return;
+    }
+    if (user.password.length < 6) {
+      setError("Password must be 6 character long");
+      setTimeout(() => {
+        setError("");
+      }, 4000);
+      return;
+    }
+
+    // You are good to go for login
+    // Perform any type of login logic here like,
+    // firebase.auth.login(user)
+    // here we are just gonna show alert
+    Alert.alert("Login", "Login Successful");
+  };
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView style={styles.container} behavior="height">
@@ -33,65 +106,160 @@ export default function App() {
         <View style={styles.mainCont}>
           <View style={styles.outerCont}>
             <View style={styles.loginHeadingCont}>
-              <Text style={styles.loginHeading}>Login</Text>
+              {error !== "" ? (
+                <Text>{error}</Text>
+              ) : (
+                <Text style={styles.loginHeading}>Login</Text>
+              )}
             </View>
-            <View style={styles.form}>
-              <View style={styles.labelCont}>
-                <Text style={styles.label}>Email:</Text>
+            <Pressable
+              style={{
+                ...styles.form,
+                width: loginType === "normal" ? "100%" : 230,
+                height: loginType === "normal" ? "auto" : 40,
+              }}
+              onPress={() => setLoginType("normal")}
+            >
+              <Text
+                style={{
+                  ...styles.normalToggler,
+                  opacity: loginType === "normal" ? 0 : 1,
+                }}
+              >
+                User Email and Password
+              </Text>
+              <View
+                style={{ display: loginType === "normal" ? "flex" : "none" }}
+              >
+                <View style={styles.labelCont}>
+                  <Text style={styles.label}>Email:</Text>
+                </View>
+                <View style={styles.inputCont}>
+                  <TextInput
+                    value={user.email}
+                    onChangeText={(e) => setUser({ ...user, email: e })}
+                    style={styles.inputField}
+                    placeholder="e.g. jay123@domain.com"
+                  />
+                  <Entypo name="email" size={24} color={validColor.email} />
+                </View>
+                <View style={styles.labelCont}>
+                  <Text style={styles.label}>Password:</Text>
+                </View>
+                <View style={styles.inputCont}>
+                  <TextInput
+                    value={user.password}
+                    onChangeText={(e) => setUser({ ...user, password: e })}
+                    style={styles.inputField}
+                    placeholder="Your Password"
+                    secureTextEntry={true}
+                  />
+                  <Entypo name="lock" size={24} color={validColor.password} />
+                </View>
+                <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                <Pressable
+                  style={{
+                    ...styles.loginCont,
+                    backgroundColor: validColor.button,
+                  }}
+                  onPress={() => performLogin()}
+                >
+                  <Text style={styles.loginText}>Login</Text>
+                </Pressable>
               </View>
-              <View style={styles.inputCont}>
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="e.g. jay123@domain.com"
-                />
-                <Entypo name="email" size={24} color="black" />
-              </View>
-              <View style={styles.labelCont}>
-                <Text style={styles.label}>Password:</Text>
-              </View>
-              <View style={styles.inputCont}>
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="Your Password"
-                  secureTextEntry={true}
-                />
-                <Entypo name="lock" size={24} color="black" />
-              </View>
-              <Text style={styles.forgotPassword}>Forgot Password?</Text>
-              <Pressable style={styles.loginCont}>
-                <Text style={styles.loginText}>Login</Text>
-              </Pressable>
-            </View>
+            </Pressable>
             <View style={styles.orCont}>
               <View style={styles.dash}></View>
               <Text style={styles.orText}>or</Text>
               <View style={styles.dash}></View>
             </View>
-            <Pressable style={styles.otherServicesCont}>
-              <Text style={styles.otherServicesText}>Use Other services</Text>
-              <View style={styles.logoCont}>
-                <Image
-                  source={{
-                    uri: "https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-google-logos-vector-eps-cdr-svg-download-10.png",
-                  }}
-                  style={styles.logoImage}
-                />
+            <Pressable
+              style={styles.otherServicesCont}
+              onPress={() => setLoginType("other")}
+            >
+              <View
+                style={{
+                  ...styles.otherToggler,
+                  display: loginType === "normal" ? "flex" : "none",
+                  opacity: loginType === "normal" ? 1 : 0,
+                }}
+              >
+                <Text style={styles.otherServicesText}>Use Other services</Text>
+                <View style={styles.logoCont}>
+                  <Image
+                    source={{
+                      uri: "https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-google-logos-vector-eps-cdr-svg-download-10.png",
+                    }}
+                    style={styles.logoImage}
+                  />
+                </View>
+                <View style={styles.logoCont}>
+                  <Image
+                    source={{
+                      uri: "https://www.freepnglogos.com/uploads/apple-logo-png/file-apple-logo-black-svg-wikimedia-commons-1.png",
+                    }}
+                    style={styles.logoImage}
+                  />
+                </View>
+                <View style={styles.logoCont}>
+                  <Image
+                    source={{
+                      uri: "https://www.freepnglogos.com/uploads/512x512-logo-png/512x512-logo-github-icon-35.png",
+                    }}
+                    style={styles.logoImage}
+                  />
+                </View>
               </View>
-              <View style={styles.logoCont}>
-                <Image
-                  source={{
-                    uri: "https://www.freepnglogos.com/uploads/apple-logo-png/file-apple-logo-black-svg-wikimedia-commons-1.png",
-                  }}
-                  style={styles.logoImage}
-                />
-              </View>
-              <View style={styles.logoCont}>
-                <Image
-                  source={{
-                    uri: "https://www.freepnglogos.com/uploads/512x512-logo-png/512x512-logo-github-icon-35.png",
-                  }}
-                  style={styles.logoImage}
-                />
+              <View
+                style={{
+                  ...styles.otherOptions,
+                  display: loginType === "normal" ? "none" : "flex",
+                }}
+              >
+                <View style={styles.optionCont}>
+                  <View style={styles.optionLogoCont}>
+                    <Image
+                      source={{
+                        uri: "https://www.freepnglogos.com/uploads/google-logo-png/google-logo-png-google-logos-vector-eps-cdr-svg-download-10.png",
+                      }}
+                      style={styles.optionLogoImage}
+                    />
+                  </View>
+                  <Text style={styles.optionText}>Google</Text>
+                </View>
+                <View style={styles.optionCont}>
+                  <View style={styles.optionLogoCont}>
+                    <Image
+                      source={{
+                        uri: "https://www.freepnglogos.com/uploads/apple-logo-png/file-apple-logo-black-svg-wikimedia-commons-1.png",
+                      }}
+                      style={styles.optionLogoImage}
+                    />
+                  </View>
+                  <Text style={styles.optionText}>Apple</Text>
+                </View>
+                <View style={styles.optionCont}>
+                  <View style={styles.optionLogoCont}>
+                    <Image
+                      source={{
+                        uri: "https://www.freepnglogos.com/uploads/512x512-logo-png/512x512-logo-github-icon-35.png",
+                      }}
+                      style={styles.optionLogoImage}
+                    />
+                  </View>
+                  <Text style={styles.optionText}>Github</Text>
+                </View>
+                <View style={styles.optionCont}>
+                  <View style={styles.optionLogoCont}>
+                    <Image
+                      source={{
+                        uri: "https://www.freepnglogos.com/uploads/facebook-logo-17.jpg",
+                      }}
+                      style={styles.optionLogoImage}
+                    />
+                  </View>
+                  <Text style={styles.optionText}>Facebook</Text>
+                </View>
               </View>
             </Pressable>
           </View>
@@ -148,6 +316,7 @@ const styles = StyleSheet.create({
     width: 280,
     backgroundColor: "#FBFDA2",
     borderRadius: 20,
+    alignItems: "center",
   },
   loginHeadingCont: {
     width: "100%",
@@ -162,7 +331,7 @@ const styles = StyleSheet.create({
   form: {
     width: "100%",
     backgroundColor: "#72F3A5",
-    borderRadius: 10,
+    borderRadius: 15,
     padding: 15,
     paddingBottom: 0,
     borderWidth: 1,
@@ -196,7 +365,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   loginCont: {
-    backgroundColor: "#FF3263",
+    backgroundColor: "#8F3263",
     width: 200,
     height: 40,
     alignSelf: "center",
@@ -229,17 +398,21 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
   },
   otherServicesCont: {
-    height: 40,
-    backgroundColor: "#fff",
-    alignSelf: "center",
+    minHeight: 40,
+    width: "auto",
+    marginBottom: 10,
+  },
+  otherToggler: {
+    borderWidth: 1,
+    borderColor: "black",
     paddingHorizontal: 10,
+    backgroundColor: "#fff",
     borderRadius: 15,
+    height: 40,
+    alignSelf: "center",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "black",
   },
   otherServicesText: {
     fontSize: 13,
@@ -263,5 +436,47 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textDecorationLine: "underline",
     backgroundColor: "#B0FDEA",
+  },
+  normalToggler: {
+    width: 230,
+    height: 40,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    textAlignVertical: "center",
+    borderWidth: 1,
+    position: "absolute",
+    fontFamily,
+  },
+  otherOptions: {
+    alignItems: "center",
+  },
+  optionCont: {
+    margin: 5,
+    paddingHorizontal: 10,
+    height: 40,
+    width: 230,
+    borderRadius: 15,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#000",
+  },
+  optionLogoCont: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  optionLogoImage: {
+    width: "100%",
+    height: "100%",
+  },
+  optionText: {
+    fontSize: 16,
+    fontFamily,
   },
 });
